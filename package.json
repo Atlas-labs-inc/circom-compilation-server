@@ -22,6 +22,7 @@
     "ansi-to-html": "^0.7.2",
     "ansi-to-react": "^6.1.6",
     "bl": "^5.0.0",
+    "circom2": "^0.2.5",
     "cors": "^2.8.5",
     "cross-env": "^7.0.3",
     "express": "^4.18.1",
