@@ -1,1 +1,1 @@
-web: npm run dev
+web: sh install_circom.sh && npm run dev
