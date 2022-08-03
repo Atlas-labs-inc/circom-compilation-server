@@ -31,9 +31,9 @@ app.post('/compile', async function (req, res) {
    }
 });
 
-const PORT = 8081;
+const PORT = process.env.PORT | 3000;
 const server = app.listen(PORT, function () {
-   console.log("Example app listening at http://192.168.1.57:%s", PORT);
+   console.log("App listening at %s", server.address());
 });
 
 module.exports = server;
