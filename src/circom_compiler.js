@@ -24,7 +24,7 @@ async function compile(full_circuit) {
     fs.writeFileSync(`${temp_file_name}.circom`, full_circuit);
     console.log("Didnt");
     let args = [
-        'npx circom2',
+        'circom2',
         `${temp_file_name}.circom`,
         '--wasm',
         '--r1cs'
