@@ -3,11 +3,23 @@ const exec = util.promisify(require('child_process').exec);
 
 const crypto = require("crypto");
 const fs = require('fs');
+const os = require('os');
 
-/// @param full_circuit all .circom code loaded into 1 object
+/// Change how files are referenced based on server OS
+const fileDelimiter = platform => {
+    return platform === "win32" ? '\\' : '/';
+}
+
+/// Remove server specific file names
+const outputNormalize = (randomization_string, stdout) => {
+    return stdout.replaceAll("_" + randomization_string, '');
+}
+
+/// @param full_circuit all circom code loaded into one string object
 async function compile(full_circuit) {
     // Save circuit to file
-    const temp_file_name = `main_${crypto.randomBytes(16).toString("hex")}`;
+    const randomization_string = crypto.randomBytes(32).toString('hex');
+    const temp_file_name = `main_${randomization_string}`;
     fs.writeFileSync(`${temp_file_name}.circom`, full_circuit);
     let args = [
         'circom',
@@ -15,20 +27,29 @@ async function compile(full_circuit) {
         '--wasm',
         '--r1cs'
     ]
-    
+    const delimiter = fileDelimiter(os.platform());
     const root_path = __dirname
-        .split('/')
+        .split(delimiter)
         .slice(0, -1)
-        .join('/')
-    
+        .join(delimiter);
     const {stdout, stderr} = await exec(args.join(' '));
-    const wasm_binary = fs.readFileSync(`${root_path}/${temp_file_name}_js/${temp_file_name}.wasm`, {encoding: 'binary'})
-    //console.log(WebAssembly.validate(wasm_binary));
-    // fs.writeFileSync('main.wasm', Buffer.from(wasm_binary, 'binary'));
+
+    const client_stdout = outputNormalize(randomization_string, stdout);
+    const client_stderr = outputNormalize(randomization_string, stderr);
+
+    if(stderr.includes('error[')){
+        fs.rmSync(`${temp_file_name}.circom`);
+        throw Error(client_stderr);
+    }
+    
+    const wasm_binary = fs.readFileSync(`${root_path}/${temp_file_name}_js/${temp_file_name}.wasm`, {encoding: 'binary'});
+    const r1cs_binary = fs.readFileSync(`${temp_file_name}.r1cs`);
+
     // Cleanup
     fs.rmSync(`./${temp_file_name}_js`, {recursive: true, force: true});
     fs.rmSync(`${temp_file_name}.circom`);
-    return wasm_binary;
+    fs.rmSync(`${temp_file_name}.r1cs`);
+    return [wasm_binary, r1cs_binary, client_stdout, client_stderr];
 } 
 
 module.exports = compile;

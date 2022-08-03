@@ -1,20 +1,35 @@
 const express = require('express');
+const cors = require('cors');
 const compile = require('./circom_compiler');
 const bodyParser = require("body-parser");
-
+const snarkjs = require('snarkjs');
 const app = express();
+const { BufferList } = require('bl')
 
-app.use(bodyParser.urlencoded({ extended: false }))
-app.use(bodyParser.json())
+app.use(express.json());
+app.use(cors());
 
 app.post('/compile', async function (req, res) {
-   const wasm_file = await compile(req.body.code);
-   res.send(new Buffer.from(wasm_file, 'binary'));
-})
+   try{
+      const [ wasm, r1cs, stdout, stderr ] = await compile(req.body.code);
+      const wasm_base64 = new Buffer.from(wasm, 'binary').toString('base64');
+      const r1cs_base64 = new Buffer.from(r1cs, 'binary').toString('base64');
+      res.status(200).json({
+         'circuit_wasm': wasm_base64,
+         'circuit_r1cs': r1cs_base64,
+         'stdout': stdout,
+         'stderr': stderr
+      });
+   } catch (e) {
+      res.status(400).json({
+         'stderr': e.message
+      });
+   }
+});
 
 const PORT = 8081;
 const server = app.listen(PORT, function () {
-   console.log("Example app listening at http://localhost:%s", PORT);
-})
+   console.log("Example app listening at http://192.168.1.57:%s", PORT);
+});
 
 module.exports = server;
