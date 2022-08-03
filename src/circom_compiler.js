@@ -29,7 +29,7 @@ async function compile(full_circuit) {
     const temp_file_name = `main_${randomization_string}`;
     fs.writeFileSync(`${temp_file_name}.circom`, full_circuit);
     let args = [
-        'circom',
+        './circom',
         `${temp_file_name}.circom`,
         '--wasm',
         '--r1cs'
