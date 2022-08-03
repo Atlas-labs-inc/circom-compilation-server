@@ -22,12 +22,14 @@ async function compile(full_circuit) {
     const randomization_string = crypto.randomBytes(32).toString('hex');
     const temp_file_name = `main_${randomization_string}`;
     fs.writeFileSync(`${temp_file_name}.circom`, full_circuit);
+    console.log("Didnt");
     let args = [
         'npx circom2',
         `${temp_file_name}.circom`,
         '--wasm',
         '--r1cs'
     ]
+    console.log("Compiled")
     const delimiter = fileDelimiter(os.platform());
     const root_path = __dirname
         .split(delimiter)
