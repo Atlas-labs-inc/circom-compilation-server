@@ -3,8 +3,8 @@ const cors = require('cors');
 const compile = require('./circom_compiler');
 const bodyParser = require("body-parser");
 const snarkjs = require('snarkjs');
+
 const app = express();
-const { BufferList } = require('bl')
 
 app.use(express.json());
 app.use(cors());

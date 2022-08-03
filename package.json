@@ -5,7 +5,8 @@
   "main": "src/app.js",
   "scripts": {
     "test": "cross-env NODE_ENV=test jest --silent=false --verbose --forceExit",
-    "dev": "npx nodemon"
+    "dev": "npx nodemon",
+    "prod": "pm2 start src/app.js"
   },
   "repository": {
     "type": "git",

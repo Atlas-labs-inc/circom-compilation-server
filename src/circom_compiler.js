@@ -1,5 +1,6 @@
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
+const circom2 = require('circom2');
 
 const crypto = require("crypto");
 const fs = require('fs');
@@ -22,7 +23,7 @@ async function compile(full_circuit) {
     const temp_file_name = `main_${randomization_string}`;
     fs.writeFileSync(`${temp_file_name}.circom`, full_circuit);
     let args = [
-        'circom',
+        'npx circom2',
         `${temp_file_name}.circom`,
         '--wasm',
         '--r1cs'
