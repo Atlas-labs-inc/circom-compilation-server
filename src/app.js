@@ -14,14 +14,11 @@ app.get('/', async function (req, res) {
 });
 
 app.post('/compile', async function (req, res) {
-   console.log(req.body);
+   console.log("Request received:", req.body.code);
    try{
       const [ wasm, r1cs, stdout, stderr ] = await compile(req.body.code);
       const wasm_base64 = new Buffer.from(wasm, 'binary').toString('base64');
       const r1cs_base64 = new Buffer.from(r1cs, 'binary').toString('base64');
-      console.log(
-         "buffer succeed"
-      );
       res.status(200).json({
          'circuit_wasm': wasm_base64,
          'circuit_r1cs': r1cs_base64,
@@ -39,3 +36,5 @@ const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, function () {
    console.log("App listening at %s", server.address());
 });
+
+module.exports = server;

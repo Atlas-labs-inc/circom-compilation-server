@@ -11,6 +11,20 @@ const fileDelimiter = platform => {
     return platform === "win32" ? '\\' : '/';
 }
 
+/// Remove "expected" json key-value from stderr
+const removeExpectedObject = (stderr) => {
+    const init_str = ", expected: [";
+    const expected_loc = stderr.indexOf(init_str);
+    let expected_loc_end = 0;
+    for (let x = expected_loc+init_str.length; x < stderr.length; x++) { 
+        if(stderr.slice(x, x+3) === "] }"){
+            expected_loc_end = x;
+            break
+        }
+    }
+    return (stderr.substr(0, expected_loc) + stderr.substr(expected_loc_end));
+}
+
 /// Remove server specific file names
 const outputNormalize = (randomization_string, stdout) => {
     return stdout.replaceAll("_" + randomization_string, '');
@@ -22,14 +36,12 @@ async function compile(full_circuit) {
     const randomization_string = crypto.randomBytes(32).toString('hex');
     const temp_file_name = `main_${randomization_string}`;
     fs.writeFileSync(`${temp_file_name}.circom`, full_circuit);
-    console.log("Didnt");
     let args = [
-        'circom2',
+        'circom',
         `${temp_file_name}.circom`,
         '--wasm',
         '--r1cs'
     ]
-    console.log("Compiled")
     const delimiter = fileDelimiter(os.platform());
     const root_path = __dirname
         .split(delimiter)
@@ -38,7 +50,7 @@ async function compile(full_circuit) {
     const {stdout, stderr} = await exec(args.join(' '));
 
     const client_stdout = outputNormalize(randomization_string, stdout);
-    const client_stderr = outputNormalize(randomization_string, stderr);
+    const client_stderr = removeExpectedObject(outputNormalize(randomization_string, stderr));
 
     if(stderr.includes('error[')){
         fs.rmSync(`${temp_file_name}.circom`);
@@ -47,7 +59,6 @@ async function compile(full_circuit) {
     
     const wasm_binary = fs.readFileSync(`${root_path}/${temp_file_name}_js/${temp_file_name}.wasm`, {encoding: 'binary'});
     const r1cs_binary = fs.readFileSync(`${temp_file_name}.r1cs`);
-    console.log("wasm_binary", wasm_binary);
     
     // Cleanup
     fs.rmSync(`./${temp_file_name}_js`, {recursive: true, force: true});

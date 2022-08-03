@@ -102,7 +102,7 @@ describe('Circom Compilation', () => {
     it('Get WASM + R1CS from Server', async () => {
         const res = await requestWithSupertest
             .post('/compile')
-            .send({'code': "template IsSquare() {\n  signal input a;\n  signal input b;\n  b === a * a;\n}\ncomponent main {public [b]} = IsSquare();"});
+            .send({'code': "template IsSquare() {\n  signal input a;\n  signal input b\n  b === a * a;\n}\ncomponent main {public [b]} = IsSquare();"});
         // Recreate the below code on the frontend
         console.log("Compiler Output:",res.body);
         const wasm_binary = new Buffer.from(res.body['circuit_wasm'], 'base64');
