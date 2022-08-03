@@ -9,6 +9,10 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+app.get('/', async function (req, res) {
+   res.status(200).send("Atlas ZK Compilation Server");
+});
+
 app.post('/compile', async function (req, res) {
    try{
       const [ wasm, r1cs, stdout, stderr ] = await compile(req.body.code);
