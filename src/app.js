@@ -31,7 +31,7 @@ app.post('/compile', async function (req, res) {
    }
 });
 
-const PORT = process.env.PORT | 3000;
+const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, function () {
    console.log("App listening at %s", server.address());
 });
