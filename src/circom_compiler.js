@@ -47,7 +47,8 @@ async function compile(full_circuit) {
     
     const wasm_binary = fs.readFileSync(`${root_path}/${temp_file_name}_js/${temp_file_name}.wasm`, {encoding: 'binary'});
     const r1cs_binary = fs.readFileSync(`${temp_file_name}.r1cs`);
-
+    console.log("wasm_binary", wasm_binary);
+    
     // Cleanup
     fs.rmSync(`./${temp_file_name}_js`, {recursive: true, force: true});
     fs.rmSync(`${temp_file_name}.circom`);

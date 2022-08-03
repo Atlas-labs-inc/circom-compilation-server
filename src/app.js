@@ -19,6 +19,9 @@ app.post('/compile', async function (req, res) {
       const [ wasm, r1cs, stdout, stderr ] = await compile(req.body.code);
       const wasm_base64 = new Buffer.from(wasm, 'binary').toString('base64');
       const r1cs_base64 = new Buffer.from(r1cs, 'binary').toString('base64');
+      console.log(
+         "buffer succeed"
+      );
       res.status(200).json({
          'circuit_wasm': wasm_base64,
          'circuit_r1cs': r1cs_base64,
