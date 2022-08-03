@@ -14,6 +14,7 @@ app.get('/', async function (req, res) {
 });
 
 app.post('/compile', async function (req, res) {
+   console.log(req.body);
    try{
       const [ wasm, r1cs, stdout, stderr ] = await compile(req.body.code);
       const wasm_base64 = new Buffer.from(wasm, 'binary').toString('base64');
@@ -35,5 +36,3 @@ const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, function () {
    console.log("App listening at %s", server.address());
 });
-
-module.exports = server;
