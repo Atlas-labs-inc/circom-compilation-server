@@ -10,7 +10,7 @@ const https = require('https');
 describe('Circom Compilation', () => {
     const input = {
         'a': 2,
-        'b': 5
+        'b': 4
     }
     let compile_data = {};
 
