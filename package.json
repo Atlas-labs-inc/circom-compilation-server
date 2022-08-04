@@ -4,7 +4,7 @@
   "description": "Atlas ZK Backend",
   "main": "src/app.js",
   "scripts": {
-    "test": "cross-env NODE_ENV=test jest --silent=false --verbose --forceExit",
+    "test": "cross-env NODE_ENV=test jest --silent=false --verbose --forceExit --testTimeout=100000000",
     "dev": "npx nodemon",
     "prod": "pm2 start src/app.js"
   },

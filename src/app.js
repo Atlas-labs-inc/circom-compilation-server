@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const compile = require('./circom_compiler');
+const compiler = require('./circom_compiler');
 const bodyParser = require("body-parser");
 const snarkjs = require('snarkjs');
 
@@ -16,18 +16,42 @@ app.get('/', async function (req, res) {
 app.post('/compile', async function (req, res) {
    console.log("Request received:", req.body.code);
    try{
-      const [ wasm, r1cs, stdout, stderr ] = await compile(req.body.code);
+      const [ wasm, zkey, verify, stdout, stderr ] = await compiler.compile(req.body.code);
       const wasm_base64 = new Buffer.from(wasm, 'binary').toString('base64');
-      const r1cs_base64 = new Buffer.from(r1cs, 'binary').toString('base64');
+      const zkey_base64 = new Buffer.from(zkey, 'binary').toString('base64');
+
       res.status(200).json({
          'circuit_wasm': wasm_base64,
-         'circuit_r1cs': r1cs_base64,
+         'circuit_zkey': zkey_base64,
+         'verify_key': verify,
          'stdout': stdout,
          'stderr': stderr
       });
    } catch (e) {
       res.status(400).json({
          'stderr': e.message
+      });
+   }
+});
+
+app.post('/prove', async function (req, res) {
+   try{
+
+      const [proof_data, proof_status] = await compiler.prove(
+         req.body.circuit_wasm,
+         req.body.circuit_zkey,
+         req.body.verify_key,
+         req.body.input
+      );
+      
+      res.status(200).json({
+         "proof_data": proof_data,
+         "proof_status": proof_status
+      });
+   } catch (e) {
+      console.log(e);
+      res.status(400).json({
+         'error': e.message
       });
    }
 });

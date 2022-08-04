@@ -1,33 +1,25 @@
-const util = require('util');
-const exec = util.promisify(require('child_process').exec);
-const circom2 = require('circom2');
-
+const putil = require('util');
+const exec = putil.promisify(require('child_process').exec);
 const crypto = require("crypto");
 const fs = require('fs');
 const os = require('os');
+const snarkjs = require('snarkjs');
 
-/// Change how files are referenced based on server OS
-const fileDelimiter = platform => {
-    return platform === "win32" ? '\\' : '/';
+const util = require('./compilation_utility');
+
+async function getKeys(r1cs_fname, zkey_fname) {
+    const constraints = await snarkjs.r1cs.info(r1cs_fname);
+    const ptau_fname = util.getPowersOfTau(constraints.nConstraints);
+
+    await snarkjs.plonk.setup(r1cs_fname, ptau_fname, zkey_fname);
+    const verification_key = await snarkjs.zKey.exportVerificationKey(zkey_fname);
+    const zkey_binary = fs.readFileSync(zkey_fname);
+    return [verification_key, zkey_binary];
 }
 
-/// Remove "expected" json key-value from stderr
-const removeExpectedObject = (stderr) => {
-    const init_str = ", expected: [";
-    const expected_loc = stderr.indexOf(init_str);
-    let expected_loc_end = 0;
-    for (let x = expected_loc+init_str.length; x < stderr.length; x++) { 
-        if(stderr.slice(x, x+3) === "] }"){
-            expected_loc_end = x;
-            break
-        }
-    }
-    return (stderr.substr(0, expected_loc) + stderr.substr(expected_loc_end));
-}
-
-/// Remove server specific file names
-const outputNormalize = (randomization_string, stdout) => {
-    return stdout.replaceAll("_" + randomization_string, '');
+function writeBinaryBase64(data_base64, fname) {
+    const binary_data = new Buffer.from(data_base64, 'base64');
+    fs.writeFileSync(fname, binary_data);
 }
 
 /// @param full_circuit all circom code loaded into one string object
@@ -42,15 +34,15 @@ async function compile(full_circuit) {
         '--wasm',
         '--r1cs'
     ]
-    const delimiter = fileDelimiter(os.platform());
+    const delimiter = util.fileDelimiter(os.platform());
     const root_path = __dirname
         .split(delimiter)
         .slice(0, -1)
         .join(delimiter);
     const {stdout, stderr} = await exec(args.join(' '));
 
-    const client_stdout = outputNormalize(randomization_string, stdout);
-    const client_stderr = removeExpectedObject(outputNormalize(randomization_string, stderr));
+    const client_stdout = util.outputNormalize(randomization_string, stdout);
+    const client_stderr = util.removeExpectedObject(util.outputNormalize(randomization_string, stderr));
 
     if(stderr.includes('error[')){
         fs.rmSync(`${temp_file_name}.circom`);
@@ -59,12 +51,44 @@ async function compile(full_circuit) {
     
     const wasm_binary = fs.readFileSync(`${root_path}/${temp_file_name}_js/${temp_file_name}.wasm`, {encoding: 'binary'});
     const r1cs_binary = fs.readFileSync(`${temp_file_name}.r1cs`);
-    
-    // Cleanup
+    const zkey_fname = `${temp_file_name}.zkey`;
+
+    const [verify_json, zkey_binary] = await getKeys(`${temp_file_name}.r1cs`, zkey_fname);
+
+    // Cleanup (including getKeys)
     fs.rmSync(`./${temp_file_name}_js`, {recursive: true, force: true});
     fs.rmSync(`${temp_file_name}.circom`);
     fs.rmSync(`${temp_file_name}.r1cs`);
-    return [wasm_binary, r1cs_binary, client_stdout, client_stderr];
+    fs.rmSync(zkey_fname);
+
+    return [wasm_binary, zkey_binary, verify_json, client_stdout, client_stderr];
 } 
 
-module.exports = compile;
+async function prove(wasm_base64, zkey_base64, verify_json, input){
+    const randomization_string = crypto.randomBytes(32).toString('hex');
+    const temp_file_name = `main_${randomization_string}`;
+
+    writeBinaryBase64(wasm_base64, `${temp_file_name}.wasm`);
+    writeBinaryBase64(zkey_base64, `${temp_file_name}.zkey`);
+    let proof;
+    let verify_state;
+    try {
+        proof = await snarkjs.plonk.fullProve(input, `${temp_file_name}.wasm`, `${temp_file_name}.zkey`);
+        verify_state = await snarkjs.plonk.verify(verify_json, proof.publicSignals, proof.proof);
+    }
+    catch (e) {
+        // Remove data before passing assert error to frontend
+        fs.rmSync(`${temp_file_name}.wasm`);
+        fs.rmSync(`${temp_file_name}.zkey`);
+        throw Error(e.message);
+    }
+    fs.rmSync(`${temp_file_name}.wasm`);
+    fs.rmSync(`${temp_file_name}.zkey`);
+
+    return [proof, verify_state]
+}
+
+module.exports = {
+    compile,
+    prove
+};
