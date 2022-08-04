@@ -16,7 +16,7 @@ app.get('/', async function (req, res) {
 app.post('/compile', async function (req, res) {
    console.log("Request received:", req.body.code);
    try{
-      const [ wasm, zkey, verify, stdout, stderr ] = await compiler.compile(req.body.code);
+      const [ wasm, zkey, verify, verifier_sol, stdout, stderr ] = await compiler.compile(req.body.code);
       const wasm_base64 = new Buffer.from(wasm, 'binary').toString('base64');
       const zkey_base64 = new Buffer.from(zkey, 'binary').toString('base64');
 
@@ -24,10 +24,12 @@ app.post('/compile', async function (req, res) {
          'circuit_wasm': wasm_base64,
          'circuit_zkey': zkey_base64,
          'verify_key': verify,
+         'verifier_sol': verifier_sol,
          'stdout': stdout,
          'stderr': stderr
       });
    } catch (e) {
+      console.log(e);
       res.status(400).json({
          'stderr': e.message
       });

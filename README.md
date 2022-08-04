@@ -16,6 +16,7 @@ Max constraints: `64k`
     "circuit_wasm": "",
     "circuit_zkey": "",
     "verify_key": {},
+    "verifier_sol": "",
     "stdout": "",
     "stderr": ""
 }

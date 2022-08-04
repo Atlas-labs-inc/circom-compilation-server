@@ -51,17 +51,23 @@ async function compile(full_circuit) {
     
     const wasm_binary = fs.readFileSync(`${root_path}/${temp_file_name}_js/${temp_file_name}.wasm`, {encoding: 'binary'});
     const r1cs_binary = fs.readFileSync(`${temp_file_name}.r1cs`);
+
     const zkey_fname = `${temp_file_name}.zkey`;
 
     const [verify_json, zkey_binary] = await getKeys(`${temp_file_name}.r1cs`, zkey_fname);
 
+    const verifier_sol = await snarkjs.zKey.exportSolidityVerifier(
+        zkey_fname, 
+        {'plonk': fs.readFileSync('src/verifier_plonk.sol.ejs', 'utf-8')}
+    );
+    
     // Cleanup (including getKeys)
     fs.rmSync(`./${temp_file_name}_js`, {recursive: true, force: true});
     fs.rmSync(`${temp_file_name}.circom`);
     fs.rmSync(`${temp_file_name}.r1cs`);
     fs.rmSync(zkey_fname);
 
-    return [wasm_binary, zkey_binary, verify_json, client_stdout, client_stderr];
+    return [wasm_binary, zkey_binary, verify_json, verifier_sol, client_stdout, client_stderr];
 } 
 
 async function prove(wasm_base64, zkey_base64, verify_json, input){
@@ -85,7 +91,7 @@ async function prove(wasm_base64, zkey_base64, verify_json, input){
     fs.rmSync(`${temp_file_name}.wasm`);
     fs.rmSync(`${temp_file_name}.zkey`);
 
-    return [proof, verify_state]
+    return [proof, verify_state];
 }
 
 module.exports = {

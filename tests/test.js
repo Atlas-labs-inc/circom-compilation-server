@@ -17,8 +17,9 @@ describe('Circom Compilation', () => {
     it('Get compile data from server', async () => {
         const res = await requestWithSupertest
             .post('/compile')
-            .send({'code': "template IsSquare() {\n  signal input a;\n  signal input b;\n  b === a * a;\n}\ncomponent main {public [b]} = IsSquare();"});
+            .send({"code": "pragma circom 2.0.0; \ntemplate IsSquare() {\n  signal input a;\n  signal input b;\n  b === a * a;\n}\ncomponent main {public [b]} = IsSquare();"});
         // Recreate the below code on the frontend
+        console.log(res.body);
         compile_data['circuit_wasm'] = res.body.circuit_wasm;
         compile_data['circuit_zkey'] = res.body.circuit_zkey;
         compile_data['verify_key'] = res.body.verify_key;
@@ -30,8 +31,9 @@ describe('Circom Compilation', () => {
             .post('/prove')
             .send(compile_data);
         // Recreate the below code on the frontend
-      console.log(res.body);
+        console.log(res.body);
     });
+
 });
 
 afterAll(done => {
