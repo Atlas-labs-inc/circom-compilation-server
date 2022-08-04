@@ -6,7 +6,7 @@
   "scripts": {
     "test": "cross-env NODE_ENV=test jest --silent=false --verbose --forceExit --testTimeout=100000000",
     "dev": "npx nodemon",
-    "prod": "pm2 start src/app.js"
+    "prod": "pm2-runtime start src/app.js -i 1"
   },
   "repository": {
     "type": "git",
